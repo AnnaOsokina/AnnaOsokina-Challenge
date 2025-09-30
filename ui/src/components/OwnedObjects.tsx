@@ -19,6 +19,7 @@ import { useState } from "react";
 import { useNetworkVariable } from "../networkConfig";
 import { Hero } from "../types/hero";
 import { transferHero } from "../utility/helpers/transfer_hero";
+import { pinHero } from "../utility/helpers/pin_hero";
 import { listHero } from "../utility/marketplace/list_hero";
 import { createArena } from "../utility/arena/create_arena";
 import { RefreshProps } from "../types/props";
@@ -35,6 +36,7 @@ export function OwnedObjects({ refreshKey, setRefreshKey }: RefreshProps) {
     [key: string]: boolean;
   }>({});
   const [isListing, setIsListing] = useState<{ [key: string]: boolean }>({});
+  const [isPinning, setIsPinning] = useState<{ [key: string]: boolean }>({});
   const [isCreatingBattle, setIsCreatingBattle] = useState<{
     [key: string]: boolean;
   }>({});
@@ -43,6 +45,32 @@ export function OwnedObjects({ refreshKey, setRefreshKey }: RefreshProps) {
   );
 
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
+
+
+  const handlePinHero = (heroId: string) => {
+  if (!packageId) return;
+
+  setIsPinning((prev) => ({ ...prev, [heroId]: true }));
+
+  const tx = pinHero(packageId, heroId);
+  signAndExecute(
+    { transaction: tx },
+    {
+      onSuccess: async ({ digest }) => {
+        await suiClient.waitForTransaction({
+          digest,
+          options: { showEffects: true, showObjectChanges: true },
+        });
+
+        setRefreshKey(refreshKey + 1);
+        setIsPinning((prev) => ({ ...prev, [heroId]: false }));
+      },
+      onError: () => {
+        setIsPinning((prev) => ({ ...prev, [heroId]: false }));
+      },
+    },
+  );
+};
 
   const { data, isPending, error } = useSuiClientQuery(
     "getOwnedObjects",
@@ -71,6 +99,7 @@ export function OwnedObjects({ refreshKey, setRefreshKey }: RefreshProps) {
     }, 2000);
   };
 
+  
   const handleTransfer = (heroId: string, address: string) => {
     if (!address.trim() || !packageId) return;
 
@@ -251,6 +280,7 @@ export function OwnedObjects({ refreshKey, setRefreshKey }: RefreshProps) {
                       <Tabs.Trigger value="transfer">Transfer</Tabs.Trigger>
                       <Tabs.Trigger value="list">List for Sale</Tabs.Trigger>
                       <Tabs.Trigger value="battle">Battle</Tabs.Trigger>
+                      <Tabs.Trigger value="pin">Pin</Tabs.Trigger>
                     </Tabs.List>
 
                     <Tabs.Content value="transfer">
@@ -327,6 +357,23 @@ export function OwnedObjects({ refreshKey, setRefreshKey }: RefreshProps) {
                         </Button>
                       </Flex>
                     </Tabs.Content>
+
+                    <Tabs.Content value="pin">
+                    <Flex direction="column" gap="2" mt="3">
+                      <Text size="2" color="gray">
+                        Pin this hero as your favorite.
+                      </Text>
+                      <Button
+                        onClick={() => handlePinHero(heroId)}
+                        disabled={isPinning[heroId]}
+                        loading={isPinning[heroId]}
+                        color="purple"
+                      >
+                        {isPinning[heroId] ? "Pinning..." : "Pin Hero"}
+                      </Button>
+                    </Flex>
+                  </Tabs.Content>
+
                   </Tabs.Root>
                 </Flex>
               </Card>

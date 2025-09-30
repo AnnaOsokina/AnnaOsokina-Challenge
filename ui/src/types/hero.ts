@@ -5,6 +5,7 @@ export interface Hero {
   name: string;
   image_url: string;
   power: string;
+  is_pinned: boolean;
 }
 
 export interface ListHero {
