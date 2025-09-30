@@ -8,7 +8,7 @@ public struct Hero has key, store {
     name: String,
     image_url: String,
     power: u64,
-    pinned:bool,
+    pinned: bool,
 }
 
 public struct HeroMetadata has key, store {
@@ -25,7 +25,7 @@ public fun create_hero(name: String, image_url: String, power: u64, ctx: &mut Tx
         name: name,
         image_url: image_url,
         power: power,
-        pinned:false
+        pinned: false
     };
     let metadata = HeroMetadata {
         id: object::new(ctx),
@@ -44,10 +44,10 @@ public fun create_hero(name: String, image_url: String, power: u64, ctx: &mut Tx
     //TODO: Use transfer::freeze_object() to make metadata immutable
 }
 
-public entry fun pin_hero(hero:&mut Hero){
+public fun pin_hero(hero: &mut Hero, ctx: &mut TxContext){
     hero.pinned = true;
 }
-public entry fun unpin_hero(hero: &mut Hero) {
+public fun unpin_hero(hero: &mut Hero, ctx: &mut TxContext){
     hero.pinned = false;
 }
 // ========= GETTER FUNCTIONS =========

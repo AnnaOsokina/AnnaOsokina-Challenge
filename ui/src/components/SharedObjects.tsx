@@ -206,6 +206,7 @@ export default function SharedObjects({ refreshKey, setRefreshKey }: RefreshProp
             const listHeroId = obj.data?.objectId!;
             const fields = listHero.fields as ListHero;
             const heroFields = fields.nft.fields;
+            console.log("Is pinned:", heroFields.pinned);
             const priceInSui = Number(fields.price) / 1_000_000_000;
 
             return (
