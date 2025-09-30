@@ -1,6 +1,6 @@
 import { Transaction } from "@mysten/sui/transactions";
 
-export const pinHero = (
+export const unpinHero = (
 packageId: string,
 heroId: string,
 ) => {

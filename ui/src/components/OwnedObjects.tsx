@@ -20,6 +20,7 @@ import { useNetworkVariable } from "../networkConfig";
 import { Hero } from "../types/hero";
 import { transferHero } from "../utility/helpers/transfer_hero";
 import { pinHero } from "../utility/helpers/pin_hero";
+import { unpinHero } from "../utility/helpers/unpin_hero";
 import { listHero } from "../utility/marketplace/list_hero";
 import { createArena } from "../utility/arena/create_arena";
 import { RefreshProps } from "../types/props";
@@ -47,12 +48,13 @@ export function OwnedObjects({ refreshKey, setRefreshKey }: RefreshProps) {
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
 
 
-  const handlePinHero = (heroId: string) => {
+ const handleTogglePin = (heroId: string, isPinned: boolean) => {
   if (!packageId) return;
 
   setIsPinning((prev) => ({ ...prev, [heroId]: true }));
 
-  const tx = pinHero(packageId, heroId);
+  const tx = isPinned ? unpinHero(packageId, heroId) : pinHero(packageId, heroId);
+
   signAndExecute(
     { transaction: tx },
     {
@@ -214,6 +216,14 @@ export function OwnedObjects({ refreshKey, setRefreshKey }: RefreshProps) {
     (obj) => obj.data?.content && "fields" in obj.data.content,
   );
 
+  heroes.sort((a, b) => {
+  const aPinned = (a.data?.content as any).fields.pinned;
+  const bPinned = (b.data?.content as any).fields.pinned;
+
+  if (aPinned === bPinned) return 0;
+  return aPinned ? -1 : 1; // Pinned first
+});
+
   return (
     <Flex direction="column" gap="4">
       <Heading size="6">Your Heroes ({heroes.length})</Heading>
@@ -228,11 +238,17 @@ export function OwnedObjects({ refreshKey, setRefreshKey }: RefreshProps) {
             const hero = obj.data?.content as any;
             const heroId = obj.data?.objectId!;
             const fields = hero.fields as Hero;
+            console.log("Hero fields:", fields);
 
             return (
               <Card key={heroId} style={{ padding: "16px" }}>
                 <Flex direction="column" gap="3">
                   {/* Hero Image */}
+                  {fields.pinned && (
+                    <Badge color="purple" size="2">
+                      ⭐ Pinned
+                    </Badge>
+                  )}
                   <img
                     src={fields.image_url}
                     alt={fields.name}
@@ -359,21 +375,26 @@ export function OwnedObjects({ refreshKey, setRefreshKey }: RefreshProps) {
                     </Tabs.Content>
 
                     <Tabs.Content value="pin">
-                    <Flex direction="column" gap="2" mt="3">
-                      <Text size="2" color="gray">
-                        Pin this hero as your favorite.
-                      </Text>
-                      <Button
-                        onClick={() => handlePinHero(heroId)}
-                        disabled={isPinning[heroId]}
-                        loading={isPinning[heroId]}
-                        color="purple"
-                      >
-                        {isPinning[heroId] ? "Pinning..." : "Pin Hero"}
-                      </Button>
-                    </Flex>
-                  </Tabs.Content>
-
+                      <Flex direction="column" gap="2" mt="3">
+                        <Text size="2" color="gray">
+                          Pin this hero as your favorite.
+                        </Text>
+                        <Button
+                          onClick={() => handleTogglePin(heroId, fields.pinned)}
+                          disabled={isPinning[heroId]}
+                          loading={isPinning[heroId]}
+                          color="purple"
+                        >
+                          {isPinning[heroId]
+                            ? fields.pinned
+                              ? "⭐ Unpinning..."
+                              : "📌 Pinning..."
+                            : fields.pinned
+                              ? "⭐ Unpin"
+                              : "📌 Pin"}
+                        </Button>
+                      </Flex>
+                    </Tabs.Content>
                   </Tabs.Root>
                 </Flex>
               </Card>
